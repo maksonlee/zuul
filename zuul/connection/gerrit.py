@@ -230,7 +230,8 @@ class GerritConnection(BaseConnection):
 
         self.baseurl = self.connection_config.get('baseurl',
                                                   'https://%s' % self.server)
-
+        
+        self.http_password = self.connection_config.get('http_password')
         self._change_cache = {}
         self.gerrit_event_connector = None
 
@@ -387,6 +388,11 @@ class GerritConnection(BaseConnection):
     def getInfoRefs(self, project):
         url = "%s/p/%s/info/refs?service=git-upload-pack" % (
             self.baseurl, project)
+        if self.http_password is not None:
+            handler = urllib.request.HTTPDigestAuthHandler()
+            handler.add_password("Gerrit Code Review", self.baseurl, self.user, self.http_password)
+            opener = urllib.request.build_opener(handler)
+            urllib.request.install_opener(opener)
         try:
             data = urllib.request.urlopen(url).read()
         except:
